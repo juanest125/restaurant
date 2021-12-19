@@ -13,6 +13,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 public class RouterRest {
 @Bean
 public RouterFunction<ServerResponse> routerFunction(Handler handler) {
-    return route(GET("/"), handler::listenGETUseCase);
+    return route(POST("/api/v1/user/signup"), handler::signUp)
+            .andRoute(GET("/api/v1/user/all"), handler::getAllUsers);
     }
 }
