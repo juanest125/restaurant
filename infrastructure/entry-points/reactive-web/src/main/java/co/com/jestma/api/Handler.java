@@ -4,8 +4,10 @@ import co.com.jestma.api.dto.LoginRequestDto;
 import co.com.jestma.api.dto.SignUpDto;
 import co.com.jestma.model.credential.Credential;
 import co.com.jestma.model.restaurantexception.RestaurantThrowable;
+import co.com.jestma.model.suggestion.Suggestion;
 import co.com.jestma.model.user.User;
 import co.com.jestma.model.usersession.UserSession;
+import co.com.jestma.usecase.suggestion.SuggestionUseCase;
 import co.com.jestma.usecase.user.UserUseCase;
 import co.com.jestma.usecase.utility.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -22,17 +24,20 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class Handler {
-    private final UserUseCase useCase;
+    private final UserUseCase userUseCase;
+    private final SuggestionUseCase suggestionUseCase;
     private final ObjectMapper mapper;
     private final ResponseUtils<User> userResponseUtils;
     private final ResponseUtils<UserSession> loginResponseUtils;
     private final ResponseUtils<List<User>> usersResponseUtils;
+    private final ResponseUtils<Suggestion> suggestionResponseUtils;
+    private final ResponseUtils<List<Suggestion>> suggestionsResponseUtils;
 
     public Mono<ServerResponse> signUp(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(SignUpDto.class)
                 .doOnNext(value -> log.info("::: Entering to signUp with requestBody {}", value))
                 .map(signUpDto -> mapper.map(signUpDto, User.class))
-                .flatMap(useCase::signup)
+                .flatMap(userUseCase::signup)
                 .onErrorResume(throwable -> userResponseUtils.getResponseTypeError(User.builder().build(), throwable))
                 .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
                 ;
@@ -42,7 +47,7 @@ public class Handler {
         return serverRequest.bodyToMono(LoginRequestDto.class)
                 .doOnNext(value -> log.info("::: Entering to login with requestBody {}", value))
                 .map(loginRequestDto -> mapper.map(loginRequestDto, Credential.class))
-                .flatMap(useCase::login)
+                .flatMap(userUseCase::login)
                 .onErrorResume(throwable -> loginResponseUtils.getResponseTypeError(UserSession.builder().build(), throwable))
                 .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
                 ;
@@ -50,15 +55,53 @@ public class Handler {
 
     public Mono<ServerResponse> getAllUsers(ServerRequest serverRequest) {
         return getUserAuthenticated(serverRequest)
-                .flatMap(token -> useCase.findAll())
+                .flatMap(user -> userUseCase.findAll())
                 .onErrorResume(throwable -> usersResponseUtils.getResponseTypeError(List.of(), throwable))
+                .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
+                ;
+    }
+
+    public Mono<ServerResponse> getAllSuggest(ServerRequest serverRequest) {
+        return getUserAuthenticated(serverRequest)
+                .flatMap(suggestionUseCase::getAll)
+                .onErrorResume(throwable -> suggestionsResponseUtils.getResponseTypeError(List.of(), throwable))
+                .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
+                ;
+    }
+
+    public Mono<ServerResponse> createSuggestion(ServerRequest serverRequest) {
+        return getUserAuthenticated(serverRequest)
+                .flatMap(user -> serverRequest.bodyToMono(Suggestion.class)
+                        .flatMap(suggestion -> suggestionUseCase.create(suggestion, user))
+                )
+                .onErrorResume(throwable -> suggestionResponseUtils.getResponseTypeError(Suggestion.builder().build(), throwable))
+                .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
+                ;
+    }
+
+    public Mono<ServerResponse> updateSuggestion(ServerRequest serverRequest) {
+        return getUserAuthenticated(serverRequest)
+                .flatMap(user -> serverRequest.bodyToMono(Suggestion.class)
+                        .flatMap(suggestion -> suggestionUseCase.update(suggestion, user))
+                )
+                .onErrorResume(throwable -> suggestionResponseUtils.getResponseTypeError(Suggestion.builder().build(), throwable))
+                .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
+                ;
+    }
+
+    public Mono<ServerResponse> deleteSuggestion(ServerRequest serverRequest) {
+        return getUserAuthenticated(serverRequest)
+                .flatMap(user -> serverRequest.bodyToMono(Suggestion.class)
+                        .flatMap(suggestion -> suggestionUseCase.delete(suggestion.getId(), user))
+                )
+                .onErrorResume(throwable -> suggestionResponseUtils.getResponseTypeError(Suggestion.builder().build(), throwable))
                 .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
                 ;
     }
 
     private Mono<User> getUserAuthenticated(ServerRequest serverRequest) {
         return Mono.justOrEmpty(serverRequest.headers().firstHeader("Authorization"))
-                .flatMap(useCase::findUserByToken)
+                .flatMap(userUseCase::findUserByToken)
                 .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "Unauthorized")));
     }
 }
