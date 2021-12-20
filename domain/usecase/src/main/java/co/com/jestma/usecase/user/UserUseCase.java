@@ -66,6 +66,15 @@ public class UserUseCase {
                 ;
     }
 
+    public Mono<User> findUserByToken(String rawToken){
+        return Mono.justOrEmpty(rawToken)
+                .filter(token::isTokenValid)
+                .map(token::getUsername)
+                .flatMap(userRepository::findByEmail)
+                .map(user -> user.toBuilder().password(null).build())
+                ;
+    }
+
     private Mono<User> validateUserEmailDuplicated(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .hasElement()
