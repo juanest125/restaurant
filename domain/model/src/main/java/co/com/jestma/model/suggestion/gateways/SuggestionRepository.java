@@ -10,5 +10,5 @@ public interface SuggestionRepository {
     Mono<Suggestion> getById(String id);
     Flux<Suggestion> findByUserId(String userId);
     Flux<Suggestion> findByIsPrivate(Boolean isPrivate);
-    Flux<Suggestion> findByUserIdOrIsPrivate(String userId, Boolean isPrivate);
+    Flux<Suggestion> findByUserIdOrIsPrivate(Integer page, Integer size, String userId, Boolean isPrivate);
 }

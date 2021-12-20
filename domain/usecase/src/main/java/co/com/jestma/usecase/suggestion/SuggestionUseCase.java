@@ -50,8 +50,8 @@ public class SuggestionUseCase {
                 ;
     }
 
-    public Mono<Response<List<Suggestion>>> getAll(User user){
-        return repository.findByUserIdOrIsPrivate(user.getId(), false)
+    public Mono<Response<List<Suggestion>>> getAll(Integer page, Integer size, User user){
+        return repository.findByUserIdOrIsPrivate(page, size, user.getId(), false)
                 .switchIfEmpty(Mono.empty())
                 .collectList()
                 .flatMap(suggestionsResponseUtils::getResponseType)

@@ -9,6 +9,7 @@ import co.com.jestma.model.user.User;
 import co.com.jestma.model.user.gateways.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -56,8 +57,8 @@ public class SuggestionJPARepositoryAdapter extends AdapterOperations<Suggestion
     }
 
     @Override
-    public Flux<Suggestion> findByUserIdOrIsPrivate(String userId, Boolean isPrivate) {
-        return Flux.fromIterable(repository.findByUserIdOrIsPrivate(userId, isPrivate).orElse(List.of()))
+    public Flux<Suggestion> findByUserIdOrIsPrivate(Integer page, Integer size, String userId, Boolean isPrivate) {
+        return Flux.fromIterable(repository.findByUserIdOrIsPrivate(userId, isPrivate, PageRequest.of(page, size)).orElse(List.of()))
                 .map(super::toEntity)
                 ;
     }

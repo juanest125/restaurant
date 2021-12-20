@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -62,11 +63,18 @@ public class Handler {
     }
 
     public Mono<ServerResponse> getAllSuggest(ServerRequest serverRequest) {
+        var page = getIntParam(serverRequest, "page", "0");
+        var size = getIntParam(serverRequest, "size", "5");
         return getUserAuthenticated(serverRequest)
-                .flatMap(suggestionUseCase::getAll)
+                .flatMap(user ->  suggestionUseCase.getAll(page, size, user))
                 .onErrorResume(throwable -> suggestionsResponseUtils.getResponseTypeError(List.of(), throwable))
                 .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
                 ;
+    }
+
+    private int getIntParam(ServerRequest serverRequest, String paramName, String dft) {
+        var param = serverRequest.queryParam(paramName).orElse(dft);
+        return Integer.parseInt(param);
     }
 
     public Mono<ServerResponse> createSuggestion(ServerRequest serverRequest) {
