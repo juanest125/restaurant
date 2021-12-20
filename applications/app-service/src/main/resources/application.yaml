@@ -21,6 +21,10 @@ spring:
   jpa:
     databasePlatform: "org.hibernate.dialect.H2Dialect"
 security:
-  secretKey: ${SECRET_KEY:mySecretKey}
-  tokenExpirationTimeMillis: ${TOKEN_EXPIRATION_TIME_MILLIS:1200000}
-  jwtId: ${JWT_ID:restaurantJWT}
+  secretKey: "${SECRET_KEY:mySecretKey}"
+  tokenExpirationTimeMillis: "${TOKEN_EXPIRATION_TIME_MILLIS:1200000}"
+  jwtId: "${JWT_ID:restaurantJWT}"
+adapter:
+  restconsumer:
+    timeout: "${RANDOM_NUMBER_TIMEOUT:5000}"
+    url: "${RANDOM_NUMBER_URL:http://www.randomnumberapi.com/api/v1.0/random}"

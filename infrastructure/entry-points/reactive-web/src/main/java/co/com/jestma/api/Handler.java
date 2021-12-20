@@ -3,10 +3,12 @@ package co.com.jestma.api;
 import co.com.jestma.api.dto.LoginRequestDto;
 import co.com.jestma.api.dto.SignUpDto;
 import co.com.jestma.model.credential.Credential;
+import co.com.jestma.model.randomnumber.RandomNumber;
 import co.com.jestma.model.restaurantexception.RestaurantThrowable;
 import co.com.jestma.model.suggestion.Suggestion;
 import co.com.jestma.model.user.User;
 import co.com.jestma.model.usersession.UserSession;
+import co.com.jestma.usecase.randomnumber.RandomNumberUseCase;
 import co.com.jestma.usecase.suggestion.SuggestionUseCase;
 import co.com.jestma.usecase.user.UserUseCase;
 import co.com.jestma.usecase.utility.ResponseUtils;
@@ -26,12 +28,14 @@ import java.util.List;
 public class Handler {
     private final UserUseCase userUseCase;
     private final SuggestionUseCase suggestionUseCase;
+    private final RandomNumberUseCase randomNumberUseCase;
     private final ObjectMapper mapper;
     private final ResponseUtils<User> userResponseUtils;
     private final ResponseUtils<UserSession> loginResponseUtils;
     private final ResponseUtils<List<User>> usersResponseUtils;
     private final ResponseUtils<Suggestion> suggestionResponseUtils;
     private final ResponseUtils<List<Suggestion>> suggestionsResponseUtils;
+    private final ResponseUtils<RandomNumber> randomNumberResponseUtils;
 
     public Mono<ServerResponse> signUp(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(SignUpDto.class)
@@ -102,6 +106,19 @@ public class Handler {
                         .flatMap(suggestion -> suggestionUseCase.delete(suggestion.getId(), user))
                 )
                 .onErrorResume(throwable -> suggestionResponseUtils.getResponseTypeError(Suggestion.builder().build(), throwable))
+                .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
+                ;
+    }
+
+    public Mono<ServerResponse> getRandom(ServerRequest serverRequest) {
+        var min = getIntParam(serverRequest, "min", "0");
+        var max = getIntParam(serverRequest, "max", "100");
+        var count = getIntParam(serverRequest, "count", "1");
+        return getUserAuthenticated(serverRequest)
+                .doOnNext(user -> log.info("::: Entering to getRandom with min={}, max={}, count={}", min, max, count))
+                .flatMap(user -> randomNumberUseCase.getRandomNumber(min, max, count))
+                .onErrorResume(throwable -> randomNumberResponseUtils.getResponseTypeError(RandomNumber.builder().build(), throwable))
+                .doOnNext(value -> log.info("::: Response from getRandom ->  {}", value))
                 .flatMap(value -> ServerResponse.status(value.getCode()).bodyValue(value))
                 ;
     }
