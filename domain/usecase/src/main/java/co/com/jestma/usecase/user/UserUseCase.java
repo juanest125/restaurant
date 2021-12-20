@@ -1,9 +1,13 @@
 package co.com.jestma.usecase.user;
 
+import co.com.jestma.model.credential.Credential;
+import co.com.jestma.model.credential.gateways.CredentialRepository;
 import co.com.jestma.model.response.Response;
 import co.com.jestma.model.restaurantexception.RestaurantThrowable;
 import co.com.jestma.model.user.User;
 import co.com.jestma.model.user.gateways.UserRepository;
+import co.com.jestma.model.usersession.UserSession;
+import co.com.jestma.model.usersession.gateways.UserSessionToken;
 import co.com.jestma.usecase.utility.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -19,6 +23,9 @@ public class UserUseCase {
     private final UserRepository userRepository;
     private final ResponseUtils<User> userResponseUtils;
     private final ResponseUtils<List<User>> usersResponseUtils;
+    private final ResponseUtils<UserSession> credentialResponseUtils;
+    private final UserSessionToken token;
+    private final CredentialRepository credentialRepository;
 
     private static final String EMAIL_REGEX = "^(.+)@(.+)$";
     private static final String PASS_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#?\\]]).{10,}$";
@@ -35,17 +42,42 @@ public class UserUseCase {
                 ;
     }
 
+    public Mono<Response<UserSession>> login(Credential credential) {
+        return userRepository.findByEmail(credential.getEmail())
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "Email is not registered")))
+                .flatMap(this::validateUserEmail)
+                .flatMap(user -> Mono.just(User.builder().password(credential.getPassword()).build())
+                        .flatMap(this::validateUserPassword)
+                        .thenReturn(user)
+                )
+                .flatMap(user -> Mono.just(credential.getPassword())
+                        .filter(password ->credentialRepository.validatePasswords(password, user.getPassword()))
+                        .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "Invalid credentials")))
+                        .map(password -> UserSession.builder()
+                                .id(UUID.randomUUID().toString())
+                                .userId(user.getId())
+                                .token(token.getToken(user.getEmail()))
+                                .created(LocalDateTime.now())
+                                .build()
+                        )
+                )
+                .flatMap(credentialResponseUtils::getResponseType)
+                .onErrorResume(throwable -> credentialResponseUtils.getResponseTypeError(UserSession.builder().build(), throwable))
+                ;
+    }
+
     private Mono<User> validateUserEmailDuplicated(User user) {
         return userRepository.findByEmail(user.getEmail())
                 .hasElement()
                 .filter(aBoolean -> !aBoolean)
-                .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "The email is already used")))
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "The email is already used")))
                 .thenReturn(user);
     }
 
     private User completeUser(User user) {
         return user.toBuilder()
                 .id(UUID.randomUUID().toString())
+                .password(credentialRepository.getPasswordEncoded(user.getPassword()))
                 .created(LocalDateTime.now())
                 .updated(LocalDateTime.now())
                 .build();
@@ -71,17 +103,17 @@ public class UserUseCase {
     private Mono<User> validateUserPassword(User userIn) {
         return Mono.just(userIn)
                 .filter(user -> !isNull(user.getPassword()))
-                .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "User password can not be null")))
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "User password can not be null")))
                 .filter(user -> user.getPassword().matches(PASS_REGEX))
-                .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "User password does not have a valid format: Minimum 10 chars, one lowercase letter, one uppercase letter and one special char ! @ # ? ]")));
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "User password does not have a valid format: Minimum 10 chars, one lowercase letter, one uppercase letter and one special char ! @ # ? ]")));
     }
 
     private Mono<User> validateUserEmail(User userIn) {
         return Mono.just(userIn)
                 .filter(user -> !isNull(user.getEmail()))
-                .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "User email can not be null")))
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "User email can not be null")))
                 .filter(user -> user.getEmail().matches(EMAIL_REGEX))
-                .switchIfEmpty(Mono.error(new RestaurantThrowable("401", "User email does not have a valid format")));
+                .switchIfEmpty(Mono.error(new RestaurantThrowable("400", "User email does not have a valid format")));
     }
 
 }

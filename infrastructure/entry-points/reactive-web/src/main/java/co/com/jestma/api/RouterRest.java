@@ -14,6 +14,8 @@ public class RouterRest {
 @Bean
 public RouterFunction<ServerResponse> routerFunction(Handler handler) {
     return route(POST("/api/v1/user/signup"), handler::signUp)
-            .andRoute(GET("/api/v1/user/all"), handler::getAllUsers);
+            .andRoute(GET("/api/v1/user/all"), handler::getAllUsers)
+            .andRoute(POST("/api/v1/user/login"), handler::login)
+            ;
     }
 }

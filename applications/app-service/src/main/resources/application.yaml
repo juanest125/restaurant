@@ -20,3 +20,7 @@ spring:
     driverClassName: "org.h2.Driver"
   jpa:
     databasePlatform: "org.hibernate.dialect.H2Dialect"
+security:
+  secretKey: ${SECRET_KEY:mySecretKey}
+  tokenExpirationTimeMillis: ${TOKEN_EXPIRATION_TIME_MILLIS:1200000}
+  jwtId: ${JWT_ID:restaurantJWT}

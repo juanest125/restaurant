@@ -25,6 +25,7 @@ public class UserJPARepositoryAdapter extends AdapterOperations<User, UserEntity
                 .map(super::toData)
                 .map(userEntity -> repository.save(userEntity))
                 .map(super::toEntity)
+                .map(user1 -> user1.toBuilder().password("").build())
                 .doOnNext(user1 -> log.info("User created {}", user1))
                 ;
     }
