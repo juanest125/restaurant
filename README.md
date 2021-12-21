@@ -41,3 +41,33 @@ The Entry-Points represents the input layer to the application or the business f
 This is the most external Architecture's module, and it is used to assembly the different modules, resolve dependencies and create de Beans used by the Domain's UseCases automatically. It injects to the specific instances the declared dependencies. Further, it is the start point to run the application (This module is the only one with a public static void main(String[] args) function).
 
 **Spring boot can use the UseCase's beans thanks to a '@ComponentScan' located in this layer**
+
+
+# Running
+
+## Pre-requisites
+* Gradle > 7
+* Java JRE <11 | 13>
+* IntelliJ (Optional)
+
+1. The first step is to build the application.
+```
+./gradlew build
+```
+2. Run the application.
+```
+./gradlew bootRun
+```
+
+
+## Docker
+
+Build the image
+```
+docker build -t restaurant-v1 -f deployment/Dockerfile .
+```
+
+Run the image
+```
+docker run -ti --rm -p 8080:8080 docker.io/library/restaurant-v1
+```
