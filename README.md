@@ -76,6 +76,6 @@ docker run -ti --rm -p 8080:8080 docker.io/library/restaurant-v1
 
 This [link](https://www.postman.com/science-geoscientist-30686539/workspace/restaurant/overview) contains some examples to test the API.
 
-1. Use the *user* collection and send a *signup* request. The body can be edited to created different users.
-2. Use the *user* collection and send a *login* request. The body contains de credentials to login and get the token. This token is stored automatically in *tokenBearer* as an env var to be used in future requests as an *Authorization* header.
+1. Use the *user* collection and send a *signup* request. The body can be edited to create different users.
+2. Use the *user* collection and send a *login* request. The body contains the credentials to login and get the token. This token is stored automatically in *tokenBearer* as an env var to be used on future requests as an *Authorization* header.
 3. Once the user is logged in. The user can consume other requests in *random* and *suggestion* collections.
