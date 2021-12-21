@@ -1,1 +1,1 @@
-web: java -jar applications/app-service/build/libs/app-service.jar
+web: java -jar -Dspring.profiles.active=prod applications/app-service/build/libs/app-service.jar
