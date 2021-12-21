@@ -17,7 +17,7 @@ public class ResponseUtils<T> {
 
     public Mono<Response<T>> getResponseType(T t) {
         return Mono.just(Response.<T>builder()
-                .code(201)
+                .code(200)
                 .status(Messages.SUCCESS.getId())
                 .body(t)
                 .idTransaction(UUID.randomUUID().toString())

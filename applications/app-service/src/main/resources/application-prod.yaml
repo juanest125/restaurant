@@ -1,0 +1,18 @@
+server:
+  port: "${PORT}"
+spring:
+  h2:
+    console:
+      enabled: false
+      path: "/h2"
+      settings:
+        trace: false
+  datasource:
+    url: "${SPRING_DATASOURCE_URL}"
+    username: "${SPRING_DATASOURCE_USERNAME}"
+    password: "${SPRING_DATASOURCE_PASSWORD}"
+    driverClassName: "org.postgresql.Driver"
+    hikari:
+      maximumPoolSize: 5
+  jpa:
+    databasePlatform: "org.hibernate.dialect.PostgreSQLDialect"
